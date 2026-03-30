@@ -14,4 +14,10 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 Imports: 
     sf
+Suggests: 
+    knitr,
+    rmarkdown,
+    duckdb,
+    DBI
+VignetteBuilder: knitr
 RoxygenNote: 7.1.0

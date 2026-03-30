@@ -1,0 +1,77 @@
+---
+title: "Handling Large OS MasterMap Datasets Efficiently"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Handling Large OS MasterMap Datasets Efficiently}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Introduction
+
+OS MasterMap datasets are often very large, containing millions of features. Reading these into memory all at once can be slow and may exceed available RAM. This vignette covers strategies for efficiently importing only the data you need.
+
+## 1. Attribute Filtering with `query`
+
+The most effective way to reduce memory usage is to filter features at the data source level using SQL queries. The `st_read()` function (and our `read_pavement()` wrapper) supports the `query` parameter, which GDAL uses to filter the GeoPackage on-disk.
+
+### Example: Custom Tags
+
+Suppose you want to find all buildings that are also historic sites. You can identify these using the `descriptive_group` and `descriptive_term` fields:
+
+```r
+library(mastermapr)
+library(sf)
+
+gpkg_path = "path/to/OSMasterMapTopography_topographic_area.gpkg"
+
+# Query for historic buildings
+query = "SELECT * FROM topographic_area WHERE descriptive_group LIKE '%Building%' AND descriptive_term LIKE '%Historic%'"
+historic_buildings = st_read(gpkg_path, query = query)
+```
+
+By using `SELECT *`, we get all columns, but the number of rows is drastically reduced before they are loaded into R.
+
+## 2. Spatial Filtering with `wkt_filter`
+
+If you are only interested in a specific geographic area (e.g., a city center or a development site), you can use `wkt_filter`. This tells GDAL to only return features that intersect with a provided Well-Known Text (WKT) geometry.
+
+```r
+# Define a 1km bounding box in British National Grid (EPSG:27700)
+bbox_wkt = "POLYGON((429000 434000, 430000 434000, 430000 435000, 429000 435000, 429000 434000))"
+
+pavements_leeds = read_pavement(gpkg_path, wkt_filter = bbox_wkt)
+```
+
+This is significantly faster and more memory-efficient than reading the whole file and then using `st_intersection()`.
+
+## 3. Advanced Performance with `duckdb`
+
+For extremely large datasets (multi-gigabyte GeoPackages) or complex spatial joins, `duckdb` with its `spatial` extension is the fastest option. It can query GeoPackages on-disk with high performance.
+
+```r
+library(duckdb)
+
+con <- dbConnect(duckdb())
+dbExecute(con, "INSTALL spatial; LOAD spatial;")
+
+# Efficiently query and convert to sf in one go
+pavements = st_as_sf(dbGetQuery(con, "
+  SELECT * EXCLUDE geometry, ST_AsWKB(geometry) AS geometry
+  FROM st_read('path/to/topographic_area.gpkg')
+  WHERE descriptive_group = 'Roadside' AND make = 'Manmade'
+"))
+```
+
+## Summary of Best Practices
+
+1.  **Always use `query`**: Even if you just need one feature type, it's faster than loading and then filtering.
+2.  **Combine filters**: You can use `query` and `wkt_filter` together to get exactly what you need for a specific area.
+3.  **Check layers first**: Use `st_layers(gpkg_path)` to see how many features are in a layer before reading it.
