@@ -26,7 +26,7 @@ The most effective way to reduce memory usage is to filter features at the data 
 
 Suppose you want to find all buildings that are also historic sites. You can identify these using the `descriptive_group` and `descriptive_term` fields:
 
-```r
+```{r historic_example, eval=FALSE}
 library(mastermapr)
 library(sf)
 
@@ -43,7 +43,7 @@ By using `SELECT *`, we get all columns, but the number of rows is drastically r
 
 If you are only interested in a specific geographic area (e.g., a city center or a development site), you can use `wkt_filter`. This tells GDAL to only return features that intersect with a provided Well-Known Text (WKT) geometry.
 
-```r
+```{r spatial_filter, eval=FALSE}
 # Define a 1km bounding box in British National Grid (EPSG:27700)
 bbox_wkt = "POLYGON((429000 434000, 430000 434000, 430000 435000, 429000 435000, 429000 434000))"
 
@@ -56,7 +56,7 @@ This is significantly faster and more memory-efficient than reading the whole fi
 
 For extremely large datasets (multi-gigabyte GeoPackages) or complex spatial joins, `duckdb` with its `spatial` extension is the fastest option. It can query GeoPackages on-disk with high performance.
 
-```r
+```{r duckdb_example, eval=FALSE}
 library(duckdb)
 
 con <- dbConnect(duckdb())
