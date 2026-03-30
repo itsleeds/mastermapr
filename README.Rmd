@@ -36,14 +36,30 @@ devtools::install_github("itsleeds/mastermapr")
 ```
 ## Reading-in mastermap data
 
-MasterMap products come in a zip file.
+MasterMap products come in various formats including `.gz` (GML) and `.gpkg` (GeoPackage).
 Once unzipped you can read-in MasterMap files as follows (you need to apply for a license for many of their products):
 
 ```{r example}
 library(mastermapr)
 ## basic example code
-mm_highway = read_mastermap("~/hd/data/os/Download_mastermap-roads-2019_1483661/MasterMap Highways Network_rami_3480319/", n = 3)
-plot(mm_highway["roadClassification"])
+# mm_highway = read_mastermap("~/hd/data/os/Download_mastermap-roads-2019_1483661/MasterMap Highways Network_rami_3480319/", n = 3)
+# plot(mm_highway["roadClassification"])
+```
+
+### Reading Pavements
+
+You can read pavement (sidewalk) geometries from the Topography layer using `read_pavement()`:
+
+```r
+gpkg_path = "path/to/OSMasterMapTopography_topographic_area.gpkg"
+pavements = read_pavement(gpkg_path)
+```
+
+For large files, you can filter by area using a WKT string:
+
+```r
+bbox_wkt = "POLYGON((400000 400000, 401000 400000, 401000 401000, 400000 401000, 400000 400000))"
+pavements = read_pavement(gpkg_path, wkt_filter = bbox_wkt)
 ```
 
 ## Next steps

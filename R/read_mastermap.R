@@ -1,3 +1,25 @@
+#' Read pavement geometries from OSMasterMap
+#'
+#' This function reads pavement (sidewalk) geometries from OSMasterMap Topography layers.
+#' It uses the descriptive group 'Roadside', make 'Manmade', and feature code 10183.
+#'
+#' @param gpkg_path Path to the topographic_area.gpkg file
+#' @param wkt_filter Optional WKT string to filter by area
+#' @param query Optional custom SQL query. If NULL, a default query for pavements is used.
+#'
+#' @export
+#' @examples
+#' \dontrun{
+#' gpkg_path = "path/to/OSMasterMapTopography_topographic_area.gpkg"
+#' pavements = read_pavement(gpkg_path)
+#' }
+read_pavement = function(gpkg_path, wkt_filter = NULL, query = NULL) {
+  if (is.null(query)) {
+    query = "SELECT * FROM topographic_area WHERE descriptive_group = 'Roadside' AND make = 'Manmade'"
+  }
+  sf::st_read(gpkg_path, query = query, wkt_filter = wkt_filter)
+}
+
 #' Read mastermap data
 #'
 #' This function can read-in multiple files stored in datasets downloaded from the Ordnance Survey.
